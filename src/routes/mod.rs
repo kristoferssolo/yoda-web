@@ -1,13 +1,13 @@
 mod health_check;
 
-use std::time::Duration;
+use std::{sync::Arc, time::Duration};
 
 use axum::{
     body::Bytes,
     extract::MatchedPath,
     http::{HeaderMap, Request},
     response::Response,
-    routing::get,
+    routing::{get, post},
     Router,
 };
 
@@ -17,10 +17,13 @@ use tower_http::{classify::ServerErrorsFailureClass, trace::TraceLayer};
 use tracing::{info_span, Span};
 use uuid::Uuid;
 
-pub fn route(pool: PgPool) -> Router {
+use crate::{speak::yoda_speak, state::AppState};
+
+pub fn route(state: Arc<AppState>) -> Router {
     Router::new()
         .route("/health_check", get(health_check))
-        .with_state(pool)
+        .route("/yoda", post(yoda_speak))
+        .with_state(state)
         .layer(
             TraceLayer::new_for_http()
                 .make_span_with(|request: &Request<_>| {
